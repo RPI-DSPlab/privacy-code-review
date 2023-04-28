@@ -37,14 +37,33 @@ from dataset import DataSet
 
 FLAGS = flags.FLAGS
 
+
 def augment(x, shift: int, mirror=True):
     """
     Augmentation function used in training the model.
+    数据增强
     """
     y = x['image']
     if mirror:
-        y = tf.image.random_flip_left_right(y)
+        y = tf.image.random_flip_left_right(y)  # 可选的图像反转，左右转
+
+    '''
+    Here's a breakdown of the function and its arguments:
+
+    y：这是输入图像，假定为一个形状为 (高度，宽度，通道) 的 3D 张量。 
+    
+    tf.pad：这是用于在指定维度上对输入张量进行填充的 TensorFlow 函数。 
+    
+    [[shift] * 2, [shift] * 2, [0] * 2]：一个列表，用于指定输入张量每个维度的填充。
+        第一个元素，[shift] * 2，表示高度维度应在第一行之前和最后一行之后用 shift 个值进行填充。
+        第二个元素对宽度维度执行相同的操作。
+        第三个元素，[0] * 2，表示通道维度不应有填充。
+    
+    mode='REFLECT'：这指定了要使用的填充模式。
+        在这种情况下，使用 'REFLECT' 模式，这意味着在指定维度上通过__镜像__输入张量的内容创建填充，而不重复边缘上的最后一个值。
+    '''
     y = tf.pad(y, [[shift] * 2, [shift] * 2, [0] * 2], mode='REFLECT')
+
     y = tf.image.random_crop(y, tf.shape(x['image']))
     return dict(image=y, label=x['label'])
 
@@ -54,13 +73,16 @@ class TrainLoop(objax.Module):
     Training loop for general machine learning models.
     Based on the training loop from the objax CIFAR10 example code.
     """
+    #                                         ^ 用的数据集，划重点！
     predict: Callable
     train_op: Callable
 
+    #                   v class 数量
     def __init__(self, nclass: int, **kwargs):
         self.nclass = nclass
         self.params = EasyDict(kwargs)
 
+    # 单步训练 - 作为一个unit使用（？）
     def train_step(self, summary: Summary, data: dict, progress: np.ndarray):
         kv = self.train_op(progress, data['image'].numpy(), data['label'].numpy())
         for k, v in kv.items():
@@ -69,9 +91,16 @@ class TrainLoop(objax.Module):
             if summary is not None:
                 summary.scalar(k, float(v))
 
-    def train(self, num_train_epochs: int, train_size: int, train: DataSet, test: DataSet, logdir: str, save_steps=100, patience=None):
+    def train(self, num_train_epochs: int, train_size: int, train: DataSet, test: DataSet, logdir: str, save_steps=100,
+              patience=None):
         """
         Completely standard training. Nothing interesting to see here.
+            num_train_epochs：训练的总轮数。
+            train_size：训练集的大小。
+            train 和 test：训练集和测试集的 DataSet 对象。
+            logdir：日志和检查点的存储路径。
+            save_steps：每隔多少步保存模型的检查点。
+            patience：用于提前停止的耐心参数。
         """
         checkpoint = objax.io.Checkpoint(logdir, keep_ckpts=20, makedir=True)
         start_epoch, last_ckpt = checkpoint.restore(self.vars())
@@ -92,7 +121,7 @@ class TrainLoop(objax.Module):
 
                 # Eval
                 accuracy, total = 0, 0
-                if epoch%FLAGS.eval_steps == 0 and test is not None:
+                if epoch % FLAGS.eval_steps == 0 and test is not None:
                     for data in test:
                         total += data['image'].shape[0]
                         preds = np.argmax(self.predict(data['image'].numpy()), axis=1)
@@ -114,7 +143,7 @@ class TrainLoop(objax.Module):
                 else:
                     print('Epoch %04d  Loss %.2f  Accuracy --' % (epoch + 1, summary['losses/xe']()))
 
-                if epoch%save_steps == save_steps-1:
+                if epoch % save_steps == save_steps - 1:
                     checkpoint.save(self.vars(), epoch + 1)
 
 
@@ -123,37 +152,46 @@ class MemModule(TrainLoop):
     def __init__(self, model: Callable, nclass: int, mnist=False, **kwargs):
         """
         Completely standard training. Nothing interesting to see here.
+            model：要训练的模型类。
+            nclass：分类问题中的类别数量。
+            mnist：一个布尔值，表示是否使用 MNIST 数据集（这会影响输入图像的通道数量）。
+            **kwargs：其他关键字参数。
         """
         super().__init__(nclass, **kwargs)
         self.model = model(1 if mnist else 3, nclass)
         self.opt = objax.optimizer.Momentum(self.model.vars())
         self.model_ema = objax.optimizer.ExponentialMovingAverageModule(self.model, momentum=0.999, debias=True)
+        # ^^ 创建模型的指数移动平均（EMA）版本。EMA 模型通常用于计算验证集上的性能指标，因为它提供了一个更稳定的模型状态。
 
         @objax.Function.with_vars(self.model.vars())
         def loss(x, label):
             logit = self.model(x, training=True)
             loss_wd = 0.5 * sum((v.value ** 2).sum() for k, v in self.model.vars().items() if k.endswith('.w'))
-            loss_xe = objax.functional.loss.cross_entropy_logits(logit, label).mean()
+            # ^ 权重衰减损失, 一种正则化技术，用于防止模型过拟合。
+            loss_xe = objax.functional.loss.cross_entropy_logits(logit, label).mean() # 就是交叉熵
             return loss_xe + loss_wd * self.params.weight_decay, {'losses/xe': loss_xe, 'losses/wd': loss_wd}
 
-        gv = objax.GradValues(loss, self.model.vars())
+        gv = objax.GradValues(loss, self.model.vars()) # 使用 objax.GradValues 函数计算损失函数的梯度和值。
         self.gv = gv
 
         @objax.Function.with_vars(self.vars())
         def train_op(progress, x, y):
             g, v = gv(x, y)
-            lr = self.params.lr * jn.cos(progress * (7 * jn.pi) / (2 * 8))
-            lr = lr * jn.clip(progress*100,0,1)
+            lr = self.params.lr * jn.cos(progress * (7 * jn.pi) / (2 * 8)) # 使用余弦退火学习率调度
+            lr = lr * jn.clip(progress * 100, 0, 1)
             self.opt(lr, g)
             self.model_ema.update_ema()
             return {'monitors/lr': lr, **v[1]}
 
         self.predict = objax.Jit(objax.nn.Sequential([objax.ForceArgs(self.model_ema, training=False)]))
 
-        self.train_op = objax.Jit(train_op)
+        self.train_op = objax.Jit(train_op) # 编译 train_op 函数，以在 GPU 上加速训练过程
 
 
 def network(arch: str):
+    '''
+    一大堆network定义，可用于实验
+    '''
     if arch == 'cnn32-3-max':
         return functools.partial(convnet.ConvNet, scales=3, filters=32, filters_max=1024,
                                  pooling=objax.functional.max_pool_2d)
@@ -173,6 +211,7 @@ def network(arch: str):
     elif arch == 'wrn28-10':
         return functools.partial(wide_resnet.WideResNet, depth=28, width=10)
     raise ValueError('Architecture not recognized', arch)
+
 
 def get_data(seed):
     """
@@ -205,16 +244,16 @@ def get_data(seed):
         inputs = data['train']['image']
         labels = data['train']['label']
 
-        inputs = (inputs/127.5)-1
-        np.save(os.path.join(FLAGS.logdir, "x_train.npy"),inputs)
-        np.save(os.path.join(FLAGS.logdir, "y_train.npy"),labels)
+        inputs = (inputs / 127.5) - 1
+        np.save(os.path.join(FLAGS.logdir, "x_train.npy"), inputs)
+        np.save(os.path.join(FLAGS.logdir, "y_train.npy"), labels)
 
-    nclass = np.max(labels)+1
+    nclass = np.max(labels) + 1
 
     np.random.seed(seed)
     if FLAGS.num_experiments is not None:
         np.random.seed(0)
-        keep = np.random.uniform(0,1,size=(FLAGS.num_experiments, FLAGS.dataset_size))
+        keep = np.random.uniform(0, 1, size=(FLAGS.num_experiments, FLAGS.dataset_size))
         order = keep.argsort(0)
         keep = order < int(FLAGS.pkeep * FLAGS.num_experiments)
         keep = np.array(keep[FLAGS.expid], dtype=bool)
@@ -245,6 +284,7 @@ def get_data(seed):
 
     return train, test, xs, ys, keep, nclass
 
+
 def main(argv):
     del argv
     tf.config.experimental.set_visible_devices([], "GPU")
@@ -262,16 +302,15 @@ def main(argv):
                     augment=FLAGS.augment,
                     seed=seed)
 
-
     if FLAGS.tunename:
         logdir = '_'.join(sorted('%s=%s' % k for k in args.items()))
     elif FLAGS.expid is not None:
-        logdir = "experiment-%d_%d"%(FLAGS.expid,FLAGS.num_experiments)
+        logdir = "experiment-%d_%d" % (FLAGS.expid, FLAGS.num_experiments)
     else:
-        logdir = "experiment-"+str(seed)
+        logdir = "experiment-" + str(seed)
     logdir = os.path.join(FLAGS.logdir, logdir)
 
-    if os.path.exists(os.path.join(logdir, "ckpt", "%010d.npz"%FLAGS.epochs)):
+    if os.path.exists(os.path.join(logdir, "ckpt", "%010d.npz" % FLAGS.epochs)):
         print(f"run {FLAGS.expid} already completed.")
         return
     else:
@@ -295,20 +334,20 @@ def main(argv):
                    save_steps=FLAGS.save_steps,
                    only_subset=FLAGS.only_subset,
                    **args
-    )
+                   )
 
     r = {}
     r.update(tm.params)
 
-    open(os.path.join(logdir,'hparams.json'),"w").write(json.dumps(tm.params))
-    np.save(os.path.join(logdir,'keep.npy'), keep)
+    open(os.path.join(logdir, 'hparams.json'), "w").write(json.dumps(tm.params))
+    np.save(os.path.join(logdir, 'keep.npy'), keep)
 
     tm.train(FLAGS.epochs, len(xs), train, test, logdir,
              save_steps=FLAGS.save_steps, patience=FLAGS.patience)
 
 
-
 if __name__ == '__main__':
+    # 设定默认params - 处理parsing，不用看
     flags.DEFINE_string('arch', 'cnn32-3-mean', 'Model architecture.')
     flags.DEFINE_float('lr', 0.1, 'Learning rate.')
     flags.DEFINE_string('dataset', 'cifar10', 'Dataset.')
@@ -329,4 +368,3 @@ if __name__ == '__main__':
     flags.DEFINE_integer('patience', None, 'Early stopping after this many epochs without progress')
     flags.DEFINE_bool('tunename', False, 'Use tune name?')
     app.run(main)
-
