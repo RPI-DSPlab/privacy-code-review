@@ -149,6 +149,11 @@ class TrainLoop(objax.Module):
 
 # We inherit from the training loop and define predict and train_op.
 class MemModule(TrainLoop):
+    '''
+    The MemModule class inherits from TrainLoop and defines the predict and train_op methods, which are used for
+    prediction and training, respectively. The __init__ method takes the model, the number of classes,
+    a flag indicating whether the dataset is MNIST, and additional keyword arguments.
+    '''
     def __init__(self, model: Callable, nclass: int, mnist=False, **kwargs):
         """
         Completely standard training. Nothing interesting to see here.
@@ -223,7 +228,7 @@ def get_data(seed):
     Then, we compute the subset. This works in one of two ways.
 
     1. If we have a seed, then we just randomly choose examples based on
-       a prng with that seed, keeping FLAGS.pkeep fraction of the data.
+       a prng with that seed, keeping FLAGS.keep fraction of the data.
 
     2. Otherwise, if we have an experiment ID, then we do something fancier.
        If we run each experiment independently then even after a lot of trials

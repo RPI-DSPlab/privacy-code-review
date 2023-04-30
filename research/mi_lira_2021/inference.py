@@ -50,24 +50,25 @@ def main(argv):
 
     def cache_load(arch):
         thing = []
+
         def fn():
             if len(thing) == 0:
                 thing.append(load(arch))
             return thing[0]
+
         return fn
 
-    xs_all = np.load(os.path.join(FLAGS.logdir,"x_train.npy"))[:FLAGS.dataset_size]
-    ys_all = np.load(os.path.join(FLAGS.logdir,"y_train.npy"))[:FLAGS.dataset_size]
-
+    xs_all = np.load(os.path.join(FLAGS.logdir, "x_train.npy"))[:FLAGS.dataset_size]
+    ys_all = np.load(os.path.join(FLAGS.logdir, "y_train.npy"))[:FLAGS.dataset_size]
 
     def get_loss(model, xbatch, ybatch, shift, reflect=True, stride=1):
 
         outs = []
-        for aug in [xbatch, xbatch[:,:,::-1,:]][:reflect+1]:
+        for aug in [xbatch, xbatch[:, :, ::-1, :]][:reflect + 1]:
             aug_pad = tf.pad(aug, [[0] * 2, [shift] * 2, [shift] * 2, [0] * 2], mode='REFLECT').numpy()
-            for dx in range(0, 2*shift+1, stride):
-                for dy in range(0, 2*shift+1, stride):
-                    this_x = aug_pad[:, dx:dx+32, dy:dy+32, :].transpose((0,3,1,2))
+            for dx in range(0, 2 * shift + 1, stride):
+                for dy in range(0, 2 * shift + 1, stride):
+                    this_x = aug_pad[:, dx:dx + 32, dy:dy + 32, :].transpose((0, 3, 1, 2))
 
                     logits = model.model(this_x, training=True)
                     outs.append(logits)
@@ -101,14 +102,14 @@ def main(argv):
         if FLAGS.from_epoch is not None:
             first = FLAGS.from_epoch
         else:
-            first = max_epoch-1
+            first = max_epoch - 1
 
-        for epoch in range(first,max_epoch+1):
-            if not os.path.exists(os.path.join(FLAGS.logdir, path, "ckpt", "%010d.npz"%epoch)):
+        for epoch in range(first, max_epoch + 1):
+            if not os.path.exists(os.path.join(FLAGS.logdir, path, "ckpt", "%010d.npz" % epoch)):
                 # no checkpoint saved here
                 continue
 
-            if os.path.exists(os.path.join(FLAGS.logdir, path, "logits", "%010d.npy"%epoch)):
+            if os.path.exists(os.path.join(FLAGS.logdir, path, "logits", "%010d.npy" % epoch)):
                 print("Skipping already generated file", epoch)
                 continue
 
@@ -120,19 +121,19 @@ def main(argv):
 
             stats = []
 
-            for i in range(0,len(xs_all),N):
-                stats.extend(features(model, xs_all[i:i+N],
-                                      ys_all[i:i+N]))
+            for i in range(0, len(xs_all), N):
+                stats.extend(features(model, xs_all[i:i + N],
+                                      ys_all[i:i + N]))
             # This will be shape N, augs, nclass
 
-            np.save(os.path.join(FLAGS.logdir, path, "logits", "%010d"%epoch),
-                    np.array(stats)[:,None,:,:])
+            np.save(os.path.join(FLAGS.logdir, path, "logits", "%010d" % epoch),
+                    np.array(stats)[:, None, :, :])
+
 
 if __name__ == '__main__':
     flags.DEFINE_string('dataset', 'cifar10', 'Dataset.')
-    flags.DEFINE_string('logdir', 'experiments/', 'Directory where to save checkpoints and tensorboard data.')
+    flags.DEFINE_string('logdir', 'exp/cifar10', 'Directory where to save checkpoints and tensorboard data.')
     flags.DEFINE_string('regex', '.*experiment.*', 'keep files when matching')
     flags.DEFINE_integer('dataset_size', 50000, 'size of dataset.')
     flags.DEFINE_integer('from_epoch', None, 'which epoch to load from.')
     app.run(main)
-
