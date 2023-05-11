@@ -287,6 +287,8 @@ def get_data(seed):
     train = train.nchw().one_hot(nclass).prefetch(16)
     test = test.cache().parse().batch(FLAGS.batch).nchw().prefetch(16)
 
+    # keep is a boolean array that determines which samples from the dataset
+    # should be kept for the current experiment.
     return train, test, xs, ys, keep, nclass
 
 

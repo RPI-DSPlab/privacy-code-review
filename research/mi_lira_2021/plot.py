@@ -130,6 +130,14 @@ def generate_ours(keep, scores, check_keep, check_scores, in_size=100000, out_si
     mean_in = np.median(dat_in, 1)
     mean_out = np.median(dat_out, 1)
 
+    """
+    When fix_variance is set to True, the function computes a single standard deviation (std_in) for both the "in" 
+    and "out" distributions using dat_in. This means that both distributions will have the same variance.
+
+    When fix_variance is set to False, the function computes separate standard deviations for the "in" and "out" 
+    distributions using dat_in and dat_out, respectively. This means that the distributions can have different 
+    variances
+    """
     if fix_variance:
         std_in = np.std(dat_in)
         std_out = np.std(dat_in)
@@ -139,14 +147,33 @@ def generate_ours(keep, scores, check_keep, check_scores, in_size=100000, out_si
 
     prediction = []
     answers = []
+
+    # The goal here is to predict whether each example in check_scores was part of the training set or not,
+    # based on the learned Gaussian distributions of the "in" (training) and "out" (non-training) examples.
     for ans, sc in zip(check_keep, check_scores):
+        """
+        For a Gaussian (normal) distribution with mean µ and standard deviation σ, the pdf is given by:
+
+        pdf(x) = \frac{1}{\sqrt{2 \pi \sigma^2}} \exp{\left(-\frac{(x-\mu)^2}{2\sigma^2}\right)}
+        
+        Taking the natural logarithm of the pdf, we obtain the logpdf:
+        
+        logpdf(x) = \log{\left(\frac{1}{\sqrt{2 \pi \sigma^2}}\right)} - \frac{(x-\mu)^2}{2\sigma^2}
+        
+        logpdf(x) = -\frac{1}{2} \log{(2 \pi \sigma^2)} - \frac{(x-\mu)^2}{2\sigma^2}
+        
+        """
+
+        # The small constant 1e-30 is added to avoid division by zero in case the standard deviation is zero.
         pr_in = -scipy.stats.norm.logpdf(sc, mean_in, std_in + 1e-30)
         pr_out = -scipy.stats.norm.logpdf(sc, mean_out, std_out + 1e-30)
         score = pr_in - pr_out
 
-        prediction.extend(score.mean(1))
+        prediction.extend(score.mean(1)) # averages the likelihood ratios for each example across all models.
         answers.extend(ans)
 
+    # prediction list contains the likelihood ratio scores for each example,
+    # answers list contains the corresponding ground truth values.
     return prediction, answers
 
 
@@ -226,17 +253,17 @@ def do_plot(fn, keep, scores, ntest, legend='', metric='auc', sweep_fn=sweep, **
         metric_text = 'acc=%.3f' % acc
 
     plt.plot(fpr, tpr, label=legend + metric_text, **plot_kwargs)
-    return (acc, auc)
+    return acc, auc
 
 
 def fig_fpr_tpr():
     plt.figure(figsize=(4, 3))
 
-    do_plot(generate_ours,
-            keep, scores, 1,
-            "Ours (online)\n",
-            metric='auc'
-            )
+    # do_plot(generate_ours,
+    #         keep, scores, 1,
+    #         "Ours (online)\n",
+    #         metric='auc'
+    #         )
 
     do_plot(functools.partial(generate_ours, fix_variance=True),
             keep, scores, 1,
@@ -244,23 +271,23 @@ def fig_fpr_tpr():
             metric='auc'
             )
 
-    do_plot(functools.partial(generate_ours_offline),
-            keep, scores, 1,
-            "Ours (offline)\n",
-            metric='auc'
-            )
-
-    do_plot(functools.partial(generate_ours_offline, fix_variance=True),
-            keep, scores, 1,
-            "Ours (offline, fixed variance)\n",
-            metric='auc'
-            )
-
-    do_plot(generate_global,
-            keep, scores, 1,
-            "Global threshold\n",
-            metric='auc'
-            )
+    # do_plot(functools.partial(generate_ours_offline),
+    #         keep, scores, 1,
+    #         "Ours (offline)\n",
+    #         metric='auc'
+    #         )
+    #
+    # do_plot(functools.partial(generate_ours_offline, fix_variance=True),
+    #         keep, scores, 1,
+    #         "Ours (offline, fixed variance)\n",
+    #         metric='auc'
+    #         )
+    #
+    # do_plot(generate_global,
+    #         keep, scores, 1,
+    #         "Global threshold\n",
+    #         metric='auc'
+    #         )
 
     plt.semilogx()
     plt.semilogy()
@@ -271,10 +298,26 @@ def fig_fpr_tpr():
     plt.plot([0, 1], [0, 1], ls='--', color='gray')
     plt.subplots_adjust(bottom=.18, left=.18, top=.96, right=.96)
     plt.legend(fontsize=8)
-    plt.savefig("/tmp/fprtpr.png")
+    plt.savefig("fprtpr.png")
     plt.show()
 
+def compute_single_datapoint_score(datapoint, mean_in, std_in, mean_out, std_out):
+    """
+    Compute the likelihood ratio score for a single data point.
+    """
+    pr_in = -scipy.stats.norm.logpdf(datapoint, mean_in, std_in + 1e-30)
+    pr_out = -scipy.stats.norm.logpdf(datapoint, mean_out, std_out + 1e-30)
+    score = pr_in - pr_out
 
-if __name__ == '__main__':
+    return score
+
+def archive_main():
     load_data("exp/cifar10/")
     fig_fpr_tpr()
+
+# if __name__ == '__main__':
+#     load_data("exp/cifar10/")
+#     fig_fpr_tpr()
+
+if __name__ == '__main__':
+    archive_main()
