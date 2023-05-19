@@ -343,8 +343,10 @@ def outlier_detection(ntest=1):
     data_2d = tsne.fit_transform(x_train_2d)
 
     # Convert the membership inference scores to a color palette for visualization
-    # We use a continuous color palette to reflect the 'outlierness' score
-    colors_a = sns.color_palette(as_cmap=True)(prediction)
+    cmap = plt.get_cmap('coolwarm')
+    # Normalize the prediction values to [0,1] for color mapping
+    norm = plt.Normalize(prediction.min(), prediction.max())
+    colors_a = cmap(norm(prediction))
     colors_b = y_train
 
     # Create 10 subplots for each class
@@ -362,8 +364,9 @@ def outlier_detection(ntest=1):
         # Create a scatter plot for class i
         scatter = axs[i // 5, i % 5].scatter(class_i_data_2d[:, 0], class_i_data_2d[:, 1], c=class_i_colors_a)
         axs[i // 5, i % 5].set_title(f"Plot with Outlier in Class {i}")
-        # Add colorbar for the scatter plot
-        fig.colorbar(scatter, ax=axs[i // 5, i % 5])
+        
+        # Add colorbar for the scatter plot, using the same colormap and normalization
+        fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=axs[i // 5, i % 5])
 
     # # Plot the data with colors_a
     # axs[0].scatter(data_2d[:, 0], data_2d[:, 1], c=colors_a)
