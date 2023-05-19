@@ -26,6 +26,9 @@ import functools
 # Look at me being proactive!
 import matplotlib
 
+from sklearn.manifold import TSNE
+import seaborn as sns
+
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
 
@@ -316,8 +319,62 @@ def compute_single_datapoint_score(datapoint, mean_in, std_in, mean_out, std_out
 
 
 def archive_main():
+    # main function for V1
     load_data("exp/cifar10/")
     fig_fpr_tpr()
+
+
+def outlier_detection(ntest=1):
+    # Generate membership inference scores
+    load_data("exp/cifar10/")
+    prediction, answers = generate_ours(keep[:-ntest],
+                                        scores[:-ntest],
+                                        keep[-ntest:],
+                                        scores[-ntest:])
+
+    x_train = np.load("exp/cifar10/x_train.npy")
+    y_train = np.load("exp/cifar10/y_train.npy")
+
+    # Reshape the data into a 2D array
+    x_train_2d = x_train.reshape((x_train.shape[0], -1))
+
+    # Run t-SNE on the raw data or feature space
+    tsne = TSNE(n_components=2, random_state=0)
+    data_2d = tsne.fit_transform(x_train_2d)
+
+    # Convert the membership inference scores to a color palette for visualization
+    # We use a continuous color palette to reflect the 'outlierness' score
+    colors_a = sns.color_palette(as_cmap=True)(prediction)
+    colors_b = y_train
+
+    # Create 10 subplots for each class
+    fig, axs = plt.subplots(2, 6, figsize=(20, 8))
+
+    # Iterate through each class
+    for i in range(10):
+        # Find indices of samples belonging to class i
+        class_i_indices = np.where(y_train == i)[0]
+
+        # Filter data points and colors
+        class_i_data_2d = data_2d[class_i_indices]
+        class_i_colors_a = colors_a[class_i_indices]
+
+        # Create a scatter plot for class i
+        scatter = axs[i // 5, i % 5].scatter(class_i_data_2d[:, 0], class_i_data_2d[:, 1], c=class_i_colors_a)
+        axs[i // 5, i % 5].set_title(f"Plot with Outlier in Class {i}")
+        # Add colorbar for the scatter plot
+        fig.colorbar(scatter, ax=axs[i // 5, i % 5])
+
+    # # Plot the data with colors_a
+    # axs[0].scatter(data_2d[:, 0], data_2d[:, 1], c=colors_a)
+    # axs[0].set_title('Plot with Outlier')
+
+    # Plot the data with colors_b
+    axs[1, 5].scatter(data_2d[:, 0], data_2d[:, 1], c=colors_b)
+    axs[1, 5].set_title('Plot with Class')
+
+
+    plt.show()
 
 
 # if __name__ == '__main__':
@@ -325,4 +382,5 @@ def archive_main():
 #     fig_fpr_tpr()
 
 if __name__ == '__main__':
-    archive_main()
+    # archive_main()
+    outlier_detection()

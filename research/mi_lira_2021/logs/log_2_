@@ -1,0 +1,111 @@
+2023-05-10 04:16:13.737792: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+2023-05-10 04:16:14.507828: W tensorflow/core/common_runtime/gpu/gpu_device.cc:1956] Cannot dlopen some GPU libraries. Please make sure the missing libraries mentioned above are installed properly if you would like to use GPU. Follow the guide at https://www.tensorflow.org/install/gpu for how to download and setup the required libraries for your platform.
+Skipping registering GPU devices...
+starting run 2.
+I0510 04:16:16.492267 140070804595072 dataset_info.py:578] Load dataset info from /home/yuetian/TFDS/cifar10/3.0.2
+I0510 04:16:16.494756 140070804595072 dataset_builder.py:528] Reusing dataset cifar10 (/home/yuetian/TFDS/cifar10/3.0.2)
+I0510 04:16:16.532350 140070804595072 logging_logger.py:49] Constructing tf.data.Dataset cifar10 for split test, from /home/yuetian/TFDS/cifar10/3.0.2
+I0510 04:16:16.825348 140070804595072 xla_bridge.py:440] Unable to initialize backend 'rocm': NOT_FOUND: Could not find registered platform with name: "rocm". Available platform names are: CUDA Host Interpreter
+I0510 04:16:16.825911 140070804595072 xla_bridge.py:440] Unable to initialize backend 'tpu': module 'jaxlib.xla_extension' has no attribute 'get_tpu_client'
+I0510 04:16:16.826212 140070804595072 xla_bridge.py:440] Unable to initialize backend 'plugin': xla_extension has no attributes named get_plugin_device_client. Compile TensorFlow with //tensorflow/compiler/xla/python:enable_plugin_device set to true (defaults to false) to enable this.
+No checkpoints found. Skipping restoring variables.
+Epoch 0001  Loss 1.83  Accuracy 22.60
+Epoch 0002  Loss 1.31  Accuracy 38.26
+Epoch 0003  Loss 1.07  Accuracy 49.81
+Epoch 0004  Loss 0.94  Accuracy 57.26
+Epoch 0005  Loss 0.84  Accuracy 61.46
+Epoch 0006  Loss 0.76  Accuracy 65.03
+Epoch 0007  Loss 0.69  Accuracy 67.72
+Epoch 0008  Loss 0.63  Accuracy 69.47
+Epoch 0009  Loss 0.59  Accuracy 71.47
+Epoch 0010  Loss 0.55  Accuracy 73.05
+Epoch 0011  Loss 0.52  Accuracy 74.60
+Epoch 0012  Loss 0.50  Accuracy 76.27
+Epoch 0013  Loss 0.48  Accuracy 78.03
+Epoch 0014  Loss 0.46  Accuracy 79.42
+Epoch 0015  Loss 0.43  Accuracy 80.68
+Epoch 0016  Loss 0.42  Accuracy 81.53
+Epoch 0017  Loss 0.41  Accuracy 82.36
+Epoch 0018  Loss 0.38  Accuracy 83.10
+Epoch 0019  Loss 0.38  Accuracy 84.11
+Epoch 0020  Loss 0.36  Accuracy 84.62
+Epoch 0021  Loss 0.36  Accuracy 85.10
+Epoch 0022  Loss 0.34  Accuracy 85.47
+Epoch 0023  Loss 0.34  Accuracy 85.94
+Epoch 0024  Loss 0.33  Accuracy 86.38
+Epoch 0025  Loss 0.32  Accuracy 86.47
+Epoch 0026  Loss 0.31  Accuracy 86.89
+Epoch 0027  Loss 0.30  Accuracy 87.17
+Epoch 0028  Loss 0.29  Accuracy 87.47
+Epoch 0029  Loss 0.29  Accuracy 87.80
+Epoch 0030  Loss 0.29  Accuracy 87.96
+Epoch 0031  Loss 0.27  Accuracy 88.08
+Epoch 0032  Loss 0.27  Accuracy 88.26
+Epoch 0033  Loss 0.25  Accuracy 88.31
+Epoch 0034  Loss 0.25  Accuracy 88.55
+Epoch 0035  Loss 0.26  Accuracy 88.62
+Epoch 0036  Loss 0.25  Accuracy 88.82
+Epoch 0037  Loss 0.24  Accuracy 89.12
+Epoch 0038  Loss 0.24  Accuracy 89.32
+Epoch 0039  Loss 0.23  Accuracy 89.54
+Epoch 0040  Loss 0.22  Accuracy 89.61
+Epoch 0041  Loss 0.23  Accuracy 89.60
+Epoch 0042  Loss 0.22  Accuracy 89.75
+Epoch 0043  Loss 0.21  Accuracy 89.86
+Epoch 0044  Loss 0.20  Accuracy 89.96
+Epoch 0045  Loss 0.21  Accuracy 90.04
+Epoch 0046  Loss 0.19  Accuracy 90.17
+Epoch 0047  Loss 0.19  Accuracy 90.24
+Epoch 0048  Loss 0.19  Accuracy 90.37
+Epoch 0049  Loss 0.19  Accuracy 90.29
+Epoch 0050  Loss 0.18  Accuracy 90.43
+Epoch 0051  Loss 0.18  Accuracy 90.55
+Epoch 0052  Loss 0.18  Accuracy 90.61
+Epoch 0053  Loss 0.17  Accuracy 90.61
+Epoch 0054  Loss 0.17  Accuracy 90.74
+Epoch 0055  Loss 0.16  Accuracy 90.81
+Epoch 0056  Loss 0.16  Accuracy 90.88
+Epoch 0057  Loss 0.16  Accuracy 90.89
+Epoch 0058  Loss 0.16  Accuracy 90.91
+Epoch 0059  Loss 0.15  Accuracy 90.88
+Epoch 0060  Loss 0.14  Accuracy 90.86
+Epoch 0061  Loss 0.15  Accuracy 90.83
+Epoch 0062  Loss 0.14  Accuracy 90.95
+Epoch 0063  Loss 0.14  Accuracy 91.04
+Epoch 0064  Loss 0.13  Accuracy 91.06
+Epoch 0065  Loss 0.14  Accuracy 91.17
+Epoch 0066  Loss 0.13  Accuracy 91.30
+Epoch 0067  Loss 0.12  Accuracy 91.35
+Epoch 0068  Loss 0.11  Accuracy 91.35
+Epoch 0069  Loss 0.13  Accuracy 91.46
+Epoch 0070  Loss 0.11  Accuracy 91.48
+Epoch 0071  Loss 0.11  Accuracy 91.53
+Epoch 0072  Loss 0.10  Accuracy 91.51
+Epoch 0073  Loss 0.10  Accuracy 91.51
+Epoch 0074  Loss 0.11  Accuracy 91.45
+Epoch 0075  Loss 0.10  Accuracy 91.39
+Epoch 0076  Loss 0.09  Accuracy 91.44
+Epoch 0077  Loss 0.09  Accuracy 91.54
+Epoch 0078  Loss 0.10  Accuracy 91.55
+Epoch 0079  Loss 0.08  Accuracy 91.55
+Epoch 0080  Loss 0.07  Accuracy 91.57
+Epoch 0081  Loss 0.08  Accuracy 91.60
+Epoch 0082  Loss 0.08  Accuracy 91.69
+Epoch 0083  Loss 0.06  Accuracy 91.59
+Epoch 0084  Loss 0.07  Accuracy 91.62
+Epoch 0085  Loss 0.07  Accuracy 91.62
+Epoch 0086  Loss 0.06  Accuracy 91.63
+Epoch 0087  Loss 0.05  Accuracy 91.53
+Epoch 0088  Loss 0.05  Accuracy 91.55
+Epoch 0089  Loss 0.05  Accuracy 91.59
+Epoch 0090  Loss 0.05  Accuracy 91.66
+Epoch 0091  Loss 0.04  Accuracy 91.62
+Epoch 0092  Loss 0.03  Accuracy 91.66
+Epoch 0093  Loss 0.04  Accuracy 91.67
+Epoch 0094  Loss 0.03  Accuracy 91.73
+Epoch 0095  Loss 0.03  Accuracy 91.81
+Epoch 0096  Loss 0.03  Accuracy 91.71
+Epoch 0097  Loss 0.02  Accuracy 91.69
+Epoch 0098  Loss 0.02  Accuracy 91.70
+Epoch 0099  Loss 0.01  Accuracy 91.70
+Epoch 0100  Loss 0.01  Accuracy 91.73

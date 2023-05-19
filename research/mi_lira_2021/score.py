@@ -42,6 +42,30 @@ def load_one(base):
         predictions = np.array(np.exp(predictions), dtype=np.float64)
         predictions = predictions / np.sum(predictions, axis=3, keepdims=True)
 
+        """
+        The predictions array that you've obtained is the output of your models for each example in your dataset. 
+        The shape of the array is (50000, 1, 2, 10), which means that there are 50,000 examples, each with 1 output 
+        vector, and each output vector contains 2 augmentations of the 10 class probabilities (logits). Here is a 
+        breakdown of what each dimension represents:
+
+        50000: This is the number of examples in your dataset. Each example is being processed separately, hence why 
+        this is the first dimension of the array.
+        
+        1: This represents the output vector for each example. In this case, it seems like you're only using a single 
+        output vector for each example.
+        
+        2: This represents the number of augmentations for each example. Data augmentation is a technique used to 
+        increase the diversity of your training set by applying random (but realistic) transformations such as 
+        rotations, translations, flips, etc. This helps to make the model more robust to variations in the input data.
+        
+        10: This represents the number of classes in your dataset. Each value in this last dimension of the array 
+        represents the model's predicted probability (logit) for each class.
+        
+        The values in the predictions array are probabilities (or logits, depending on whether a softmax function has 
+        been applied) that the model assigns to each class. The higher the value, the more confident the model is that 
+        the example belongs to that class. 
+        """
+
         COUNT = predictions.shape[0]
         #  x num_examples x num_augmentations x logits
         y_true = predictions[np.arange(COUNT), :, :, labels[:COUNT]]
