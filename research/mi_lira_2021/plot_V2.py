@@ -23,6 +23,9 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import auc, roc_curve
 import functools
 
+import matplotlib.cm as cm
+from matplotlib.colors import Normalize
+
 # Look at me being proactive!
 import matplotlib
 
@@ -342,11 +345,13 @@ def outlier_detection(ntest=1):
     tsne = TSNE(n_components=2, random_state=0)
     data_2d = tsne.fit_transform(x_train_2d)
 
-    # Convert the membership inference scores to a color palette for visualization
-    cmap = plt.get_cmap('coolwarm')
-    # Normalize the prediction values to [0,1] for color mapping
-    norm = plt.Normalize(prediction.min(), prediction.max())
-    colors_a = cmap(norm(prediction))
+    # Normalize the prediction scores to fit between 0 and 1
+    # norm = Normalize(vmin=min(prediction), vmax=max(prediction))
+
+    # Create a colormap
+    cmap = cm.coolwarm
+
+    colors_a = sns.color_palette("viridis", as_cmap=True)(prediction)
     colors_b = y_train
 
     # Create 10 subplots for each class
@@ -362,11 +367,13 @@ def outlier_detection(ntest=1):
         class_i_colors_a = colors_a[class_i_indices]
 
         # Create a scatter plot for class i
-        scatter = axs[i // 5, i % 5].scatter(class_i_data_2d[:, 0], class_i_data_2d[:, 1], c=class_i_colors_a)
+        scatter = axs[i // 5, i % 5].scatter(class_i_data_2d[:, 0], class_i_data_2d[:, 1],
+                                             c=class_i_colors_a, cmap=cmap)
+
         axs[i // 5, i % 5].set_title(f"Plot with Outlier in Class {i}")
-        
+
         # Add colorbar for the scatter plot, using the same colormap and normalization
-        fig.colorbar(plt.cm.ScalarMappable(norm=norm, cmap=cmap), ax=axs[i // 5, i % 5])
+        fig.colorbar(scatter, ax=axs[i // 5, i % 5])
 
     # # Plot the data with colors_a
     # axs[0].scatter(data_2d[:, 0], data_2d[:, 1], c=colors_a)
